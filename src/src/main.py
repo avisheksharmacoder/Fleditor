@@ -1,8 +1,5 @@
 import flet as ft
 
-from lide_ai_chat import lide_ai_chat_controls
-from settings_view import settings_controls
-
 
 def main(page: ft.Page):
     # icons browser.
@@ -46,8 +43,8 @@ def main(page: ft.Page):
     # we define the code editor in the main file since the fonts assigned to the
     # control cannot be assigned in a different file, where the editor is created and
     # imported here.
-    code_editor_view = ft.TextField(
-        value="Filename.py",
+    code_editor = ft.TextField(
+        value=""" print("AI is fine") """,
         text_size=20,
         text_style=code_editor_font,
         multiline=True,
@@ -63,8 +60,23 @@ def main(page: ft.Page):
         expand=2
     )
 
+    # we edit the python file name using this text field.
+    code_filename = ft.TextField(
+        value="filename.py",
+        text_size=15,
+        height=30,
+        hint_text="myapp1.py"
+    )
+
+    # this Column contains the code editor text input and the file name text input.
+    # the ratio size remains the same as the code editor text input.
+    code_editor_file_name_row = ft.Column(
+        controls=[code_filename, code_editor],
+        expand=2
+    )
+
     # we initialize the chat view here.
-    chat_view = ft.Column(
+    editor_chat_view = ft.Column(
         [
             # we define the header text of this part of the view.
             ft.Text(
@@ -111,12 +123,16 @@ def main(page: ft.Page):
         alignment=ft.MainAxisAlignment.START
     )
 
-    # We initialize the entire Lide IDE view, using the left and the right columns.
+    # We initialize the entire Lide IDE Interface, using the left and the right columns.
+    # The left column contains the Gemini chat view, where the user communicates with Gemini using a
+    # list view.
+    #
+    # The right column contains the file name editor, the code editor.
     lide_editor_view = ft.Row(
         [
-            chat_view,
+            editor_chat_view,
             ft.VerticalDivider(width=2),
-            code_editor_view
+            code_editor_file_name_row
         ],
         expand=True,
         spacing=10,
@@ -124,15 +140,32 @@ def main(page: ft.Page):
         vertical_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
-    # lide_ai chat UI definitions.
+    # This is the Home page view of Lide AI.
+    lide_homepage = [
+        ft.Text("Welcome to Lide AI IDE", size=30),
+        ft.Text("Lide AI is available", size=30),
+        ft.Icon(ft.Icons.MARK_CHAT_READ_ROUNDED, size=50, color=ft.Colors.RED_50),
+        ft.VerticalDivider(width=5)
+    ]
+
+    # We define the final column that contains the lide ai homepage controls.
     lide_ai_view = ft.Column(
-        lide_ai_chat_controls,
+        lide_homepage,
         alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         expand=True,
     )
 
-    # settings definition.
+    # We define the UI controls for the lide ai settings page.
+    settings_controls = [
+        ft.Text("App Settings", size=30),
+        ft.Switch(label="Notifications"),
+        ft.Switch(label="Flash mode"),
+        ft.Switch(label="Save chats"),
+        ft.Switch(label="Use Local Liquid Models")
+    ]
+
+    # We define the final column that contains the lide ai settings page controls.
     settings_view = ft.Column(
         settings_controls,
         alignment=ft.MainAxisAlignment.CENTER,
@@ -140,7 +173,7 @@ def main(page: ft.Page):
         expand=True
     )
 
-    # indexes of all views, similar to navigation Destinations.
+    # we define the indexes of all views, similar to navigation Destinations in flet.
     app_views = {
         0: lide_ai_view,
         1: lide_editor_view,
@@ -153,7 +186,7 @@ def main(page: ft.Page):
     # we set the title of the page.
     page.title = "NavigationBar Example"
 
-    # we define how the navigation changes when the destinations are clicked.
+    # we define how the navigation changes when the destination buttons are clicked.
     def view_navigation_change(e) -> None:
         # we need the current index of the navigation bar
         current_index = e.control.selected_index
