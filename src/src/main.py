@@ -1,4 +1,19 @@
 import flet as ft
+import os
+import dotenv
+
+from google.genai import Client
+
+API_KEY = ""
+
+
+def ask_gemini(prompt: str) -> str:
+    client = Client(api_key=API_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+    return response.text
 
 
 def main(page: ft.Page):
@@ -31,14 +46,52 @@ def main(page: ft.Page):
     # we use the Jetbrains mono font for the code editor.
     code_editor_font = ft.TextStyle(font_family="JetBrainsMono")
 
+    # we define the chat list view reference here.
+    editor_chat_list = ft.Ref[ft.ListView]()
+    editor_user_prompt_input = ft.Ref[ft.TextField]()
+
     # We write the code editor events from here.
     # We perform some tasks when some text is entered into the editor.
     def on_prompt_submit(e):
-        pass
+        # This is the prompt that the user has entered into the chat prompt input field.
+        # We add this prompt to the list view, in a rounded border Container which contains
+        # the text Control containing the prompt text.
+        add_prompt = ft.Container(
+            content=ft.Text(
+                value="Prompt : " + editor_user_prompt_input.current.value,
+                color=ft.Colors.BLACK,
+                selectable=True,
+                text_align=ft.TextAlign.START,
+                no_wrap=False,
+                weight=ft.FontWeight.BOLD
 
-    # we define the chat list view reference here.
-    chat_list = ft.Ref[ft.ListView]
-    user_prompt_input = ft.Ref[ft.TextField()]
+            ),
+            bgcolor=ft.Colors.GREY_600,
+            border_radius=10,
+            padding=5
+        )
+        editor_chat_list.current.controls.append(add_prompt)
+        page.update()
+
+        # We add the response returned from Gemini API, in a rounded container. It contains
+        # a text control, that shows the text to the user.
+        ai_response = ask_gemini(editor_user_prompt_input.current.value)
+        add_response = ft.Container(
+            content=ft.Text(
+                value=ai_response,
+                color=ft.Colors.BLACK,
+                selectable=True,
+                text_align=ft.TextAlign.START,
+                no_wrap=False,
+                weight=ft.FontWeight.BOLD
+
+            ),
+            bgcolor=ft.Colors.GREY_600,
+            border_radius=10,
+            padding=5
+        )
+        editor_chat_list.current.controls.append(add_response)
+        page.update()
 
     # we define the code editor in the main file since the fonts assigned to the
     # control cannot be assigned in a different file, where the editor is created and
@@ -57,6 +110,7 @@ def main(page: ft.Page):
         content_padding=ft.padding.all(5),
         autofocus=True,
         filled=False,
+        enable_suggestions=True,
         expand=2
     )
 
@@ -88,12 +142,12 @@ def main(page: ft.Page):
             # we define the container where all the chat interaction will be shown.
             ft.Container(
                 content=ft.ListView(
-                    ref=chat_list,
+                    ref=editor_chat_list,
                     spacing=10,
                     auto_scroll=True
                 ),
                 expand=True,
-                bgcolor=ft.Colors.GREY_500,
+                bgcolor=ft.Colors.BLACK,
                 border_radius=10
             ),
 
@@ -101,7 +155,9 @@ def main(page: ft.Page):
             ft.Row(
                 [
                     ft.TextField(
-                        ref=user_prompt_input,
+                        ref=editor_user_prompt_input,
+                        # setting multiline to False lets the user send prompts to gemini API
+                        # using the Enter button.
                         multiline=True,
                         max_lines=3,
                         border_color=ft.Colors.LIGHT_BLUE_100,
